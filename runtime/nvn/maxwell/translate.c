@@ -2165,6 +2165,14 @@ static const char *glsl_sampler_type(const ShaderTexture *t) {
 // without loops (do { } while (false) is none): control only goes forward, so every read in between follows it.
 typedef struct { size_t from, to; int r; } IpaSpan;
 
+// Bounded search: memmem is unavailable in the Windows C library.
+static char *glsl_span_find(char *text, size_t length, const char *needle, size_t needle_length) {
+    if (needle_length > length) return NULL;
+    for (size_t i = 0; i <= length - needle_length; i++)
+        if (!memcmp(text + i, needle, needle_length)) return text + i;
+    return NULL;
+}
+
 static void glsl_fold_ipa_w(Str *body) {
     if (!body->buf) return;
     char *text = body->buf;
@@ -2192,7 +2200,7 @@ static void glsl_fold_ipa_w(Str *body) {
                 ifs += is_if;
             }
         } else {
-            for (char *p = line; (p = memmem(p, eol - p, " = ", 3)); p += 3) {
+            for (char *p = line; (p = glsl_span_find(p, eol - p, " = ", 3)); p += 3) {
                 char *q = p;
                 while (q > line && q[-1] >= '0' && q[-1] <= '9') q--;
                 if (q == p || q[-1] != 'r' || (q - 1 > line && id_char(q[-2]))) continue;
@@ -2206,7 +2214,7 @@ static void glsl_fold_ipa_w(Str *body) {
                 }
                 is_w[r] = top && !strncmp(p + 3, "as_u(gl_FragCoord[3]);", 22);
             }
-            if (memmem(line, eol - line, "break;", 6) || memmem(line, eol - line, "return;", 7)) broke = true;
+            if (glsl_span_find(line, eol - line, "break;", 6) || glsl_span_find(line, eol - line, "return;", 7)) broke = true;
         }
         line = *eol ? eol + 1 : eol;
     }
