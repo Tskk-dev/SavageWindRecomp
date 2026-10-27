@@ -1956,7 +1956,7 @@ static void translate_program(void *arg) {
     Prog *p = arg;
     uint64_t pt0 = SDL_GetTicksNS();
     maxwell_gmem_base = HEAP_BASE;
-    maxwell_gmem_size = HEAP_MAX;
+    maxwell_gmem_size = VK_GMEM_IMPORT_LIMIT;
     pthread_mutex_lock(&translate_lock);
     {   // SAVAGEWIND_DBG_FS=<fs code addr hex>:<pc hex>:<reg>: that register after that instruction, as every output
         // (pc ffffffff: 1.0, where the shader runs at all), as in renderer.m. The shader can also be named
@@ -3885,7 +3885,7 @@ static VkDescriptorBufferInfo gmem_info(void) {
     static int off = -1;
     if (off < 0) off = getenv("SAVAGEWIND_VK_NO_GMEM") != NULL || !g_vk.host_import;
     uint64_t want = (kernel_heap_size() + 0xFFFF) & ~0xFFFFull;
-    if (want > HEAP_MAX) want = HEAP_MAX;
+    if (want > VK_GMEM_IMPORT_LIMIT) want = VK_GMEM_IMPORT_LIMIT;
     if (!off && !gmem_mapped) {
     #ifdef _WIN32
             if (plat_guest_sparse_heap_enabled()) {
@@ -4427,7 +4427,7 @@ static CsProg *compute_program(NvnProgram *np) {
     CsProg *cp = calloc(1, sizeof *cp);
     if (n < 256) { tab[n].addr = ss->code_addr; tab[n].cp = cp; g_cs_n = n + 1; }
     maxwell_gmem_base = HEAP_BASE;
-    maxwell_gmem_size = HEAP_MAX;
+    maxwell_gmem_size = VK_GMEM_IMPORT_LIMIT;
     ShaderKey k = {0};
     k.glsl = 1;
     k.shared_size = ss->control ? *(const uint32_t *)(ss->control + 0x754) : 0;  // (next to the group size at 0x748)

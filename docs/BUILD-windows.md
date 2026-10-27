@@ -23,6 +23,12 @@ Without `generated/` only the app is built: the start screen builds the game cod
 files (as for players), given the generator and the compiler (`make gen-helper`, `tools/fetch_zig.sh`).
 `make runtime-objs` compiles the runtime only (quick check).
 
+Experimental limited-memory build: `make B=build/win-2gb VK_GMEM_LIMIT_MB=2048` caps the Vulkan guest-heap import
+and generated shader bounds at 2 GiB. Use a separate build directory for each cap. The default, `0`, keeps the
+complete heap. The cap is a workaround: shader reads above it return zero and stores are discarded, so rendering
+can be incomplete or incorrect. Vertex/index data above the import still takes the existing copy path. Shader
+cache identities include the selected cap; caches from an unrestricted build are not reused.
+
 Run from a shell that has `C:\msys64\ucrt64\bin` on PATH (SDL3, FFmpeg, Vulkan, shaderc DLLs).
 
 ## Package

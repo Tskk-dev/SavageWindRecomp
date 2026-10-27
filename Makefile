@@ -30,6 +30,7 @@ endif
 # B: build dir. MACOS_MIN: oldest macOS to run on (default: this one). DEPS: prefix with SDL3 / FFmpeg instead of
 # Homebrew's (make deps). `make app` sets all three (build/mac15, 15.0, build/deps); plain `make` uses none.
 B         ?= build
+VK_GMEM_LIMIT_MB ?= 0
 MACOS_MIN ?=
 DEPS      ?=
 MINFLAG  := $(if $(MACOS_MIN),-mmacosx-version-min=$(MACOS_MIN))
@@ -149,11 +150,11 @@ endif
 # GLSL -> SPIR-V step). The shader caches (cache/xlate, cache/spirv, the pipeline cache and list) are kept while these
 # stay the same, so builds that do not touch those sources keep them.
 TRANSLATOR_SRCS := runtime/nvn/maxwell/translate.c runtime/nvn/maxwell/shader.h
-TRANSLATOR_ID := $(shell cat $(TRANSLATOR_SRCS) | (shasum -a 256 2>/dev/null || sha256sum) | cut -c1-16)
+TRANSLATOR_ID := $(shell (cat $(TRANSLATOR_SRCS); echo 'VK_GMEM_LIMIT_MB=$(VK_GMEM_LIMIT_MB)') | (shasum -a 256 2>/dev/null || sha256sum) | cut -c1-16)
 SPIRV_ID := $(shell cat runtime/nvn/vulkan/spirv.c | (shasum -a 256 2>/dev/null || sha256sum) | cut -c1-16)
 
 RT_OBJ   := $(patsubst runtime/%.c,$(B)/rt/%.o,$(RT_SRC))
-RTFLAGS  := -O2 -g -fno-strict-aliasing -Wall -Wno-unused-function -Iruntime -Iruntime/nvn -isystem third_party -isystem third_party/stb $(DEPINC) $(OSFLAGS)
+RTFLAGS  := -O2 -g -fno-strict-aliasing -Wall -Wno-unused-function -Iruntime -Iruntime/nvn -isystem third_party -isystem third_party/stb $(DEPINC) $(OSFLAGS) -DVK_GMEM_LIMIT_MB=$(VK_GMEM_LIMIT_MB)
 CXXFLAGS := -O2 -g -std=c++17 -I$(IMGUI) -I$(IMGUI)/backends -Iruntime -Iruntime/nvn -isystem third_party -Ithird_party/stb $(DEPINC)
 
 .DEFAULT_GOAL := all

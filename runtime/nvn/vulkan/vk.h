@@ -19,6 +19,13 @@
 #include "../nvn.h"
 #include "../maxwell/shader.h"
 
+#ifndef VK_GMEM_LIMIT_MB
+#define VK_GMEM_LIMIT_MB 0
+#endif
+// shortcut: accesses above the cap return zero / discard stores; use a complete backing strategy for correct rendering.
+#define VK_GMEM_IMPORT_LIMIT (VK_GMEM_LIMIT_MB > 0 && ((uint64_t)VK_GMEM_LIMIT_MB << 20) < HEAP_MAX ? \
+                              ((uint64_t)VK_GMEM_LIMIT_MB << 20) : HEAP_MAX)
+
 void vk_device_fault_report(void);
 #define VK_CHECK(x) do { VkResult r_ = (x); if (r_ != VK_SUCCESS) { if (r_ == VK_ERROR_DEVICE_LOST) { vk_device_fault_report(); \
     FATAL("Vulkan device lost: the GPU stopped responding (%s, %s:%d)\n", #x, __FILE__, __LINE__); } \
